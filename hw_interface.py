@@ -59,11 +59,11 @@ def getButtonState():
     
     return buttons, mux_l, mux_r
 
-
-from birge_comm_net import CommNetCore
 import time
 
-client = CommNetCore()
+from birge_comm_net import CommNetNode
+
+client = CommNetNode()
 client.connect(("10.20.22.1", 2400))
 
 while True:
