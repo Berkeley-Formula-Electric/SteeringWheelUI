@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="refresh" content="2">
+  <!-- <meta http-equiv="refresh" content="2"> -->
   <style>
     body {
       margin: 0;
@@ -20,38 +20,34 @@
   <script>
     // http://www.websocket.org/echo.html
   
-    const NETWORKTABLE_SOCKET_URI = "ws://127.0.0.1:8000/ws";
-    var ws = new WebSocket(NETWORKTABLE_SOCKET_URI);
+    var ws = new WebSocket("ws://10.20.22.1:8007/ws");
     var ws_connected = false;
   
     var nt = {};
     
     ws.onopen = function (e) {
-      log("Connected to websocket.");
+      console.log("Connected to websocket.");
       ws_connected = true;
     };
   
     ws.onclose = function (e) {
-      log("websocket Disconnected.");
+      console.log("websocket Disconnected.");
     };
   
     ws.onmessage = function (e) {
-      log("<span>RESPONSE: " + e.data + "</span>");
+      console.log("<span>RESPONSE: " + e.data + "</span>");
       
       let data = JSON.parse(e.data);
       if (data.method.toUpperCase() == "RES") {
         nt = data.data;
   
-        nt_table_list.innerHTML = "";
-        for (let key in nt) {
-          nt_table_list.innerHTML += "<div class=\"row\"><div>"+key+"</div><div>"+nt[key]+"</div></div>"
-        }
+        refresh();
        
       }
     };
   
     ws.onerror = function (e) {
-      log("<span class=error>ERROR:</span> " + e.data);
+      console.log("<span class=error>ERROR:</span> " + e.data);
     };
   
     var log = function(msg) {
@@ -63,18 +59,18 @@
         return;
       }
   
-      ws.send("{\"method\": \"ALL\", \"data\": []}");
+      ws.send("{\"method\": \"ALL\", \"data\": []}\n");
     }
   
-    setInterval(update, 2000);
+    setInterval(update, 50);
     
   </script>
 
   <script>
     var cvs, ctx;
 
-    var nt_table = {
-      "/wheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    var nt = {
+      "/steeringwheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     }
 
 
@@ -85,7 +81,9 @@
       ctx.fill();
     };
 
-    window.onload = function() {
+    window.onload = refresh;
+    
+    var refresh = function() {
       cvs = canvas;
       ctx = cvs.getContext("2d");
 
@@ -98,17 +96,17 @@
 
 
       // buttons page
-      drawButton({x: 50, y: 50}, nt_table["/wheel/buttons"][0]);
-      drawButton({x: 100, y: 100}, nt_table["/wheel/buttons"][1]);
-      drawButton({x: 100, y: 250}, nt_table["/wheel/buttons"][2]);
-      drawButton({x: 150, y: 325}, nt_table["/wheel/buttons"][3]);
-      drawButton({x: 150, y: 400}, nt_table["/wheel/buttons"][4]);
+      drawButton({x: 50, y: 50}, nt["/steeringwheel/buttons"][0]);
+      drawButton({x: 100, y: 100}, nt["/steeringwheel/buttons"][1]);
+      drawButton({x: 100, y: 250}, nt["/steeringwheel/buttons"][2]);
+      drawButton({x: 150, y: 325}, nt["/steeringwheel/buttons"][3]);
+      drawButton({x: 150, y: 400}, nt["/steeringwheel/buttons"][4]);
       
-      drawButton({x: cvs.width - 50, y: 50}, nt_table["/wheel/buttons"][5]);
-      drawButton({x: cvs.width - 100, y: 100}, nt_table["/wheel/buttons"][6]);
-      drawButton({x: cvs.width - 100, y: 250}, nt_table["/wheel/buttons"][7]);
-      drawButton({x: cvs.width - 150, y: 325}, nt_table["/wheel/buttons"][8]);
-      drawButton({x: cvs.width - 150, y: 400}, nt_table["/wheel/buttons"][9]);
+      drawButton({x: cvs.width - 50, y: 50}, nt["/steeringwheel/buttons"][5]);
+      drawButton({x: cvs.width - 100, y: 100}, nt["/steeringwheel/buttons"][6]);
+      drawButton({x: cvs.width - 100, y: 250}, nt["/steeringwheel/buttons"][7]);
+      drawButton({x: cvs.width - 150, y: 325}, nt["/steeringwheel/buttons"][8]);
+      drawButton({x: cvs.width - 150, y: 400}, nt["/steeringwheel/buttons"][9]);
     }
   </script>
 </body>

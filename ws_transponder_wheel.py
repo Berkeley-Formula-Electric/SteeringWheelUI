@@ -143,7 +143,7 @@ if __name__ == "__main__":
     client.connect(("10.20.22.1", 8000))
 
     _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    _s.bind(("0.0.0.0", 8008))
+    _s.bind(("0.0.0.0", 8007))
     _s.listen(1)
     #_s.settimeout(2)
     _s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
