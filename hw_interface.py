@@ -69,9 +69,9 @@ client.connect(("10.20.22.1", 2400))
 
 while True:
     buttons, mux_l, mux_r = getButtonState()
-    client.set("/wheel/buttons", buttons)
-    client.set("/wheel/mux_l", mux_l)
-    client.set("/wheel/mux_r", mux_r)
+    client.set("/steeringwheel/buttons", buttons)
+    client.set("/steeringwheel/mux_l", mux_l)
+    client.set("/steeringwheel/mux_r", mux_r)
 
     print(buttons, mux_l, mux_r)
 
