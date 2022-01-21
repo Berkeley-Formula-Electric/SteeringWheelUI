@@ -140,10 +140,10 @@ class WebsocketHandler:
 
 if __name__ == "__main__":
     client = CommNetNode()
-    client.connect(("10.20.22.1", 8000))
+    client.connect(("10.20.22.1", 2400))
 
     _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    _s.bind(("0.0.0.0", 8007))
+    _s.bind(("0.0.0.0", 6202))
     _s.listen(1)
     #_s.settimeout(2)
     _s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

@@ -69,7 +69,7 @@ data = {"method": "set", "data": {}}
 
 def startConnection():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("10.20.22.1", 8000))
+    s.connect(("10.20.22.1", 2400))
     return s
 
 s = startConnection()
