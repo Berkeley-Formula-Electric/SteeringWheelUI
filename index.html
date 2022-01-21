@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="2">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+
+  <script>
+    // http://www.websocket.org/echo.html
+  
+    const NETWORKTABLE_SOCKET_URI = "ws://127.0.0.1:8000/ws";
+    var ws = new WebSocket(NETWORKTABLE_SOCKET_URI);
+    var ws_connected = false;
+  
+    var nt = {};
+    
+    ws.onopen = function (e) {
+      log("Connected to websocket.");
+      ws_connected = true;
+    };
+  
+    ws.onclose = function (e) {
+      log("websocket Disconnected.");
+    };
+  
+    ws.onmessage = function (e) {
+      log("<span>RESPONSE: " + e.data + "</span>");
+      
+      let data = JSON.parse(e.data);
+      if (data.method.toUpperCase() == "RES") {
+        nt = data.data;
+  
+        nt_table_list.innerHTML = "";
+        for (let key in nt) {
+          nt_table_list.innerHTML += "<div class=\"row\"><div>"+key+"</div><div>"+nt[key]+"</div></div>"
+        }
+       
+      }
+    };
+  
+    ws.onerror = function (e) {
+      log("<span class=error>ERROR:</span> " + e.data);
+    };
+  
+    var log = function(msg) {
+      log_content.insertAdjacentHTML("beforeend", "<p>" + msg + "</p>");
+    }
+  
+    var update = function() {
+      if (!ws_connected) {
+        return;
+      }
+  
+      ws.send("{\"method\": \"ALL\", \"data\": []}");
+    }
+  
+    setInterval(update, 2000);
+    
+  </script>
+
+  <script>
+    var cvs, ctx;
+
+    var nt_table = {
+      "/wheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    }
+
+
+    var drawButton = function(pos, state) {
+      ctx.fillStyle = state ? "#CCC" : "#666";
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 20, 0, 2*Math.PI);
+      ctx.fill();
+    };
+
+    window.onload = function() {
+      cvs = canvas;
+      ctx = cvs.getContext("2d");
+
+      cvs.width = window.innerWidth;
+      cvs.height = window.innerHeight;
+
+      // clear canvas
+      ctx.fillStyle = "#222";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+
+      // buttons page
+      drawButton({x: 50, y: 50}, nt_table["/wheel/buttons"][0]);
+      drawButton({x: 100, y: 100}, nt_table["/wheel/buttons"][1]);
+      drawButton({x: 100, y: 250}, nt_table["/wheel/buttons"][2]);
+      drawButton({x: 150, y: 325}, nt_table["/wheel/buttons"][3]);
+      drawButton({x: 150, y: 400}, nt_table["/wheel/buttons"][4]);
+      
+      drawButton({x: cvs.width - 50, y: 50}, nt_table["/wheel/buttons"][5]);
+      drawButton({x: cvs.width - 100, y: 100}, nt_table["/wheel/buttons"][6]);
+      drawButton({x: cvs.width - 100, y: 250}, nt_table["/wheel/buttons"][7]);
+      drawButton({x: cvs.width - 150, y: 325}, nt_table["/wheel/buttons"][8]);
+      drawButton({x: cvs.width - 150, y: 400}, nt_table["/wheel/buttons"][9]);
+    }
+  </script>
+</body>
+</html>
