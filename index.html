@@ -17,14 +17,57 @@
   <canvas id="canvas"></canvas>
 
 
+
+  <script>
+    var cvs, ctx;
+
+    var nt = {
+      "/steeringwheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    }
+
+
+    var drawButton = function(pos, state) {
+      ctx.fillStyle = state ? "#CCC" : "#666";
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 20, 0, 2*Math.PI);
+      ctx.fill();
+    };
+    
+    var refresh = function() {
+      cvs = canvas;
+      ctx = cvs.getContext("2d");
+
+      cvs.width = window.innerWidth;
+      cvs.height = window.innerHeight;
+
+      // clear canvas
+      ctx.fillStyle = "#222";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+
+      // buttons page
+      drawButton({x: 50, y: 50}, nt["/steeringwheel/buttons"][0]);
+      drawButton({x: 100, y: 100}, nt["/steeringwheel/buttons"][1]);
+      drawButton({x: 100, y: 250}, nt["/steeringwheel/buttons"][2]);
+      drawButton({x: 150, y: 325}, nt["/steeringwheel/buttons"][3]);
+      drawButton({x: 150, y: 400}, nt["/steeringwheel/buttons"][4]);
+      
+      drawButton({x: cvs.width - 50, y: 50}, nt["/steeringwheel/buttons"][5]);
+      drawButton({x: cvs.width - 100, y: 100}, nt["/steeringwheel/buttons"][6]);
+      drawButton({x: cvs.width - 100, y: 250}, nt["/steeringwheel/buttons"][7]);
+      drawButton({x: cvs.width - 150, y: 325}, nt["/steeringwheel/buttons"][8]);
+      drawButton({x: cvs.width - 150, y: 400}, nt["/steeringwheel/buttons"][9]);
+    }
+
+    window.onload = refresh;
+  </script>
+  
   <script>
     // http://www.websocket.org/echo.html
   
     var ws = new WebSocket("ws://10.20.22.1:6202/ws");
     var ws_connected = false;
   
-    var nt = {};
-    
     ws.onopen = function (e) {
       console.log("Connected to websocket.");
       ws_connected = true;
@@ -64,50 +107,6 @@
   
     setInterval(update, 50);
     
-  </script>
-
-  <script>
-    var cvs, ctx;
-
-    var nt = {
-      "/steeringwheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    }
-
-
-    var drawButton = function(pos, state) {
-      ctx.fillStyle = state ? "#CCC" : "#666";
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 20, 0, 2*Math.PI);
-      ctx.fill();
-    };
-
-    window.onload = refresh;
-    
-    var refresh = function() {
-      cvs = canvas;
-      ctx = cvs.getContext("2d");
-
-      cvs.width = window.innerWidth;
-      cvs.height = window.innerHeight;
-
-      // clear canvas
-      ctx.fillStyle = "#222";
-      ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-
-      // buttons page
-      drawButton({x: 50, y: 50}, nt["/steeringwheel/buttons"][0]);
-      drawButton({x: 100, y: 100}, nt["/steeringwheel/buttons"][1]);
-      drawButton({x: 100, y: 250}, nt["/steeringwheel/buttons"][2]);
-      drawButton({x: 150, y: 325}, nt["/steeringwheel/buttons"][3]);
-      drawButton({x: 150, y: 400}, nt["/steeringwheel/buttons"][4]);
-      
-      drawButton({x: cvs.width - 50, y: 50}, nt["/steeringwheel/buttons"][5]);
-      drawButton({x: cvs.width - 100, y: 100}, nt["/steeringwheel/buttons"][6]);
-      drawButton({x: cvs.width - 100, y: 250}, nt["/steeringwheel/buttons"][7]);
-      drawButton({x: cvs.width - 150, y: 325}, nt["/steeringwheel/buttons"][8]);
-      drawButton({x: cvs.width - 150, y: 400}, nt["/steeringwheel/buttons"][9]);
-    }
   </script>
 </body>
 </html>
