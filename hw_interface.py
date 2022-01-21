@@ -1,3 +1,4 @@
+#! /usr/bin/python
 """
 helpful sys commands:
 
@@ -71,4 +72,7 @@ while True:
     client.set("/wheel/buttons", buttons)
     client.set("/wheel/mux_l", mux_l)
     client.set("/wheel/mux_r", mux_r)
+
+    print(buttons, mux_l, mux_r)
+
     time.sleep(0.033)

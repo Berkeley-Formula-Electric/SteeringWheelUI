@@ -1,3 +1,4 @@
+#! /usr/bin/python
 import logging
 
 from birge_comm_net import CommNetCore

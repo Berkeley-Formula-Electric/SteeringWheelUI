@@ -1,11 +1,9 @@
+#! /usr/bin/python
 import socket
-import threading
 import json
-import time
 import hashlib
 import base64
 import struct
-import logging
 
 from birge_comm_net import CommNetNode
 
