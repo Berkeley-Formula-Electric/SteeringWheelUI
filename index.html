@@ -1,112 +1,244 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- <meta http-equiv="refresh" content="2"> -->
+  <meta http-equiv="refresh" content="2">
   <style>
     body {
+      background: #F00;
       margin: 0;
       overflow: hidden;
-    }
-    canvas {
-      width: 100vw;
-      height: 100vh;
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
 
-
-
   <script>
+    const Theme = {
+      BACKGROUND: "#000000",
+      FOREGROUND: "#FFFFFF",
+      FOREGROUND_SURPRESS: "#999999",
+      THROTTLE: "#80D8FF",
+      BRAKE_REGEN: "#81C784",
+      BRAKE_MAX: "#D50000",
+    };
+    
+    const DisplayMode = {
+      DEBUG: 0,
+      NORMAL: 1,
+      WHEEL: 2,
+      MAP: 3,
+    };
+
+  </script>
+  <script>
+
+    class NT {
+      constructor() {
+        this.data = {
+          "/throttle": 1,
+          "/brake": 1,
+        };
+      }
+
+      get(key, fallback) {
+        let val = this.data[key];
+        if (val == undefined) {
+          return fallback;
+        }
+        return val;
+      }
+    }
+
+    var nt = new NT();
+
     var cvs, ctx;
 
-    var nt = {
-      "/steeringwheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    var current_page = DisplayMode.DEBUG;
+
+    var renderUIDebug = function() {
+      
+      let btns = nt.get("/buttons", [1, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
+      
+      ctx.strokeStyle = Theme.FOREGROUND_SURPRESS;
+      
+      for (let i=0; i<5; i+=1) {
+        ctx.fillStyle = btns[i] ? Theme.FOREGROUND : Theme.FOREGROUND_SURPRESS;
+        ctx.fillRect(.05 * cvs.width, .1 * cvs.height * (i + 1), .1 * cvs.height, .1 * cvs.height);
+        ctx.strokeRect(.05 * cvs.width, .1 * cvs.height * (i + 1), .1 * cvs.height, .1 * cvs.height);
+      }
+      for (let i=5; i<10; i+=1) {
+        ctx.fillStyle = btns[i] ? Theme.FOREGROUND : Theme.FOREGROUND_SURPRESS;
+        ctx.fillRect(.05 * cvs.width + .1 * cvs.height, .1 * cvs.height * (i - 4), .1 * cvs.height, .1 * cvs.height);
+        ctx.strokeRect(.05 * cvs.width + .1 * cvs.height, .1 * cvs.height * (i - 4), .1 * cvs.height, .1 * cvs.height);
+      }
+
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "right";
+      ctx.font = (.06 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/dial_0", 0), .1 * cvs.width, .7 * cvs.height);
+      ctx.fillText(nt.get("/dial_1", 0), .15 * cvs.width, .7 * cvs.height);
+
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "left";
+      ctx.font = (.08 * cvs.height) + "px arial";
+      ctx.fillText("CAN connected:", .4 * cvs.width, .2 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "left";
+      ctx.font = (.1 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/can_connected", false), .8 * cvs.width, .2 * cvs.height);
+      
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "left";
+      ctx.font = (.08 * cvs.height) + "px arial";
+      ctx.fillText("WiFi connected:", .4 * cvs.width, .4 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "left";
+      ctx.font = (.1 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/can_connected", false), .8 * cvs.width, .4 * cvs.height);
+      
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "left";
+      ctx.font = (.08 * cvs.height) + "px arial";
+      ctx.fillText("XBee connected:", .4 * cvs.width, .6 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "left";
+      ctx.font = (.1 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/can_connected", false), .8 * cvs.width, .6 * cvs.height);
+      
     }
 
+    var renderUINormal = function() {
+      ctx.fillStyle = Theme.THROTTLE;
+      ctx.fillRect(.5 * cvs.width, 0, .5 * cvs.width * nt.get("/throttle"), .05 * cvs.height);
+      
+      ctx.fillStyle = Theme.BRAKE_REGEN;
+      ctx.fillRect(.5 * cvs.width, 0, .5 * cvs.width * -nt.get("/brake"), .05 * cvs.height);
+      
+      if (nt.get("/brake") > 0.8) {
+        ctx.fillStyle = Theme.BRAKE_MAX;
+        ctx.fillRect(.1 * cvs.width, 0, .5 * cvs.width * (-nt.get("/brake")+0.8), .05 * cvs.height);
+      }
 
-    var drawButton = function(pos, state) {
-      ctx.fillStyle = state ? "#CCC" : "#666";
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 20, 0, 2*Math.PI);
-      ctx.fill();
-    };
-    
-    var refresh = function() {
+      /* power info */
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "right";
+      ctx.font = (.06 * cvs.height) + "px arial";
+      ctx.fillText("Wh", .375 * cvs.width, .3 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "right";
+      ctx.font = (.15 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/fuel_amt", 10000), .3 * cvs.width, .3 * cvs.height);
+      
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "right";
+      ctx.font = (.06 * cvs.height) + "px arial";
+      ctx.fillText("%", .375 * cvs.width, .5 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "right";
+      ctx.font = (.15 * cvs.height) + "px arial";
+      ctx.fillText((nt.get("/fuel_amt", 0.2) * 100).toFixed(1), .3 * cvs.width, .5 * cvs.height);
+      
+      ctx.fillStyle = Theme.THROTTLE;
+      ctx.fillRect(.4 * cvs.width, .55 * cvs.height, .05 * cvs.width, nt.get("/fuel", 0.5) * -.45 * cvs.height);
+      
+      /* speed info */
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.textAlign = "right";
+      ctx.font = (.08 * cvs.height) + "px arial";
+      ctx.fillText("km/h", .95 * cvs.width, .2 * cvs.height);
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "right";
+      ctx.font = (.4 * cvs.height) + "px arial";
+      ctx.fillText(nt.get("/speed", 100), .95 * cvs.width, .55 * cvs.height);
+
+
+      /* gear info */
+      let gear = nt.get("/gear", "P");
+      switch (gear) {
+        case "D":
+          ctx.fillStyle = Theme.THROTTLE; break;
+        case "N":
+          ctx.fillStyle = Theme.FOREGROUND; break;
+        case "R":
+          ctx.fillStyle = Theme.BRAKE_REGEN; break;;
+        case "P":
+          ctx.fillStyle = Theme.BRAKE_MAX; break;
+      }
+      ctx.textAlign = "left";
+      ctx.font = (.2 * cvs.height) + "px arial";
+      ctx.fillText(gear, .1 * cvs.width, .9 * cvs.height);
+
+      /* race timer */
+      ctx.fillStyle = Theme.FOREGROUND;
+      ctx.textAlign = "right";
+      ctx.font = (.3 * cvs.height) + "px consolas";
+      ctx.fillText("00:00.0", .95 * cvs.width, .9 * cvs.height);
+      
+
+      /* draw grid */
+      ctx.fillStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.fillRect(0, .05 * cvs.height, cvs.width, 1);
+      ctx.fillRect(.5 * cvs.width, .05 * cvs.height, 1, .55 * cvs.height);
+      ctx.fillRect(0, .6 * cvs.height, cvs.width, 1);
+      ctx.fillRect(.35 * cvs.width, .6 * cvs.height, 1, .5 * cvs.height);
+      
+      ctx.strokeStyle = Theme.FOREGROUND_SURPRESS;
+      ctx.strokeRect(.4 * cvs.width, .1 * cvs.height, .05 * cvs.width, .45 * cvs.height);
+    }
+
+    var update = function() {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+      
+      switch (current_page) {
+        case DisplayMode.DEBUG:
+          renderUIDebug();
+          break;
+        case DisplayMode.NORMAL:
+          renderUINormal();
+          break;
+        case DisplayMode.WHEEL:
+          
+          break;
+        case DisplayMode.MAP:
+          
+          break;
+      }
+      
+      requestAnimationFrame(update);
+    }
+
+    document.addEventListener("keydown", function(e) {
+      switch (e.key) {
+        case "0":
+          current_page = DisplayMode.DEBUG;
+          break;
+        case "1":
+          current_page = DisplayMode.NORMAL;
+          break;
+        case "2":
+          current_page = DisplayMode.WHEEL;
+          break;
+        case "3":
+          current_page = DisplayMode.MAP;
+          break;
+          
+      }
+    });
+
+
+    window.onload = function() {
       cvs = canvas;
       ctx = cvs.getContext("2d");
-
+      
       cvs.width = window.innerWidth;
       cvs.height = window.innerHeight;
+      cvs.style.width = window.innerWidth + "px";
+      cvs.style.height = window.innerHeight + "px";
 
-      // clear canvas
-      ctx.fillStyle = "#222";
-      ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-
-      // buttons page
-      drawButton({x: 50, y: 50}, nt["/steeringwheel/buttons"][0]);
-      drawButton({x: 100, y: 100}, nt["/steeringwheel/buttons"][1]);
-      drawButton({x: 100, y: 250}, nt["/steeringwheel/buttons"][2]);
-      drawButton({x: 150, y: 325}, nt["/steeringwheel/buttons"][3]);
-      drawButton({x: 150, y: 400}, nt["/steeringwheel/buttons"][4]);
-      
-      drawButton({x: cvs.width - 50, y: 50}, nt["/steeringwheel/buttons"][5]);
-      drawButton({x: cvs.width - 100, y: 100}, nt["/steeringwheel/buttons"][6]);
-      drawButton({x: cvs.width - 100, y: 250}, nt["/steeringwheel/buttons"][7]);
-      drawButton({x: cvs.width - 150, y: 325}, nt["/steeringwheel/buttons"][8]);
-      drawButton({x: cvs.width - 150, y: 400}, nt["/steeringwheel/buttons"][9]);
+      update();
     }
-
-    window.onload = refresh;
-  </script>
-  
-  <script>
-    // http://www.websocket.org/echo.html
-  
-    var ws = new WebSocket("ws://10.20.22.1:6202/ws");
-    var ws_connected = false;
-  
-    ws.onopen = function (e) {
-      console.log("Connected to websocket.");
-      ws_connected = true;
-    };
-  
-    ws.onclose = function (e) {
-      console.log("websocket Disconnected.");
-    };
-  
-    ws.onmessage = function (e) {
-      console.log("<span>RESPONSE: " + e.data + "</span>");
-      
-      let data = JSON.parse(e.data);
-      if (data.method.toUpperCase() == "RES") {
-        nt = data.data;
-  
-        refresh();
-       
-      }
-    };
-  
-    ws.onerror = function (e) {
-      console.log("<span class=error>ERROR:</span> " + e.data);
-    };
-  
-    var log = function(msg) {
-      log_content.insertAdjacentHTML("beforeend", "<p>" + msg + "</p>");
-    }
-  
-    var update = function() {
-      if (!ws_connected) {
-        return;
-      }
-  
-      ws.send("{\"method\": \"ALL\", \"data\": []}\n");
-    }
-  
-    setInterval(update, 50);
-    
   </script>
 </body>
 </html>

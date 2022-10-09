@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- <meta http-equiv="refresh" content="2"> -->
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #F00;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+
+
+  <script>
+    var theme = {
+      background: "#000000",
+      foreground: "#FFFFFF",
+      foreground_supress: "#AAAAAA",
+      throttle_bar: "#80D8FF",
+      regen_bar: "#81C784",
+      brake_bar: "#D50000",
+    }
+
+    var WIDTH = 800;
+    var HEIGHT = 480;
+
+    var WIDTH_10 = WIDTH * 0.1;
+    var HEIGHT_10 = HEIGHT * 0.1;
+
+    var WIDTH_20 = WIDTH * 0.2;
+    var HEIGHT_20 = HEIGHT * 0.2;
+    
+    var WIDTH_50 = WIDTH * 0.5;
+    var HEIGHT_50 = HEIGHT * 0.5;
+    
+    var WIDTH_80 = WIDTH * 0.8;
+    var HEIGHT_80 = HEIGHT * 0.8;
+
+    var DisplayMode = {
+      DEBUG: 0,
+      MAP: 1,
+      WHEEL: 2,
+      NORMAL: 3,
+    }
+    
+    
+    var formatTime = function(time) {
+      return (time / 60).toFixed(0).padStart(2, "0") + ":" + (time % 60).toFixed(0).padStart(2, "0") + "." + (time % 1).toFixed(1).substring(2);
+    }
+      
+    var cvs, ctx;
+
+    var nt = {
+      "/steeringwheel/buttons": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "/throttle": 0,
+      "/brake": 0,
+      "/wheelspeed": 0,
+      "/fuel": 0,
+      "/fuel_capacity": 0,
+      "/racetime": 0,
+      "/rpm": 0,
+      "/gear": "N",
+      "/brake_temp": 0,
+      "/FL_wheel_temp": 0,
+      "/FR_wheel_temp": 0,
+      "/RL_wheel_temp": 0,
+      "/RR_wheel_temp": 0,
+      "/pos": {x: 0, y: 0}
+    };
+
+    var drawButton = function(pos, state) {
+      ctx.fillStyle = state ? "#CCC" : "#666";
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 20, 0, 2*Math.PI);
+      ctx.fill();
+    };
+    
+    var t_start = Date.now() * 0.001;
+    
+    cvs = canvas;
+    ctx = cvs.getContext("2d");
+    cvs.width = 1920;
+    cvs.height = 1080;
+    cvs.style.width = 1920 + "px";
+    cvs.style.height = 1080 + "px";
+
+    var refresh = function() {
+
+      // clear canvas
+      ctx.fillStyle = "#222";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+
+      switch (1) {
+        case 0:
+          // buttons page
+          drawButton({x: 50, y: 50}, nt["/steeringwheel/buttons"][0]);
+          drawButton({x: 100, y: 100}, nt["/steeringwheel/buttons"][1]);
+          drawButton({x: 100, y: 250}, nt["/steeringwheel/buttons"][2]);
+          drawButton({x: 150, y: 325}, nt["/steeringwheel/buttons"][3]);
+          drawButton({x: 150, y: 400}, nt["/steeringwheel/buttons"][4]);
+          
+          drawButton({x: cvs.width - 50, y: 50}, nt["/steeringwheel/buttons"][5]);
+          drawButton({x: cvs.width - 100, y: 100}, nt["/steeringwheel/buttons"][6]);
+          drawButton({x: cvs.width - 100, y: 250}, nt["/steeringwheel/buttons"][7]);
+          drawButton({x: cvs.width - 150, y: 325}, nt["/steeringwheel/buttons"][8]);
+          drawButton({x: cvs.width - 150, y: 400}, nt["/steeringwheel/buttons"][9]);
+
+          break;
+        case 1:
+          var top_bar_height = 24;
+
+          ctx.fillStyle = theme.throttle_bar;
+          ctx.fillRect(WIDTH_50, 0, WIDTH_50 * nt["/throttle"], top_bar_height);
+          
+          ctx.fillStyle = theme.regen_bar;
+          ctx.fillRect(WIDTH_50, 0, WIDTH_50 * -nt["/brake"], top_bar_height);
+          
+          if (nt["/brake"] > 0.8) {
+            ctx.fillStyle = theme.brake_bar;
+            ctx.fillRect(WIDTH_10, 0, WIDTH_50 * (-nt["/brake"]+0.8), top_bar_height);
+          }
+          
+          ctx.strokeStyle = theme.foreground;
+          ctx.beginPath();
+          ctx.moveTo(0, top_bar_height);
+          ctx.lineTo(WIDTH, top_bar_height);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(WIDTH_50, 0);
+          ctx.lineTo(WIDTH_50, top_bar_height);
+          ctx.stroke();
+
+          // motor info
+          // ctx.textBaseline = "bottom";
+          ctx.fillStyle = theme.foreground;
+          ctx.textAlign = "right";
+          ctx.font = "80px Arial";
+          ctx.fillText(nt["/rpm"].toFixed(0), WIDTH_50 - 180, HEIGHT_50 - 10);
+          ctx.fillStyle = theme.foreground_supress;
+          ctx.font = "32px Arial";
+          ctx.fillText("RPM", WIDTH_50 - 100, HEIGHT_50 - 10);
+
+          // battery info
+          ctx.fillStyle = theme.foreground;
+          ctx.textAlign = "right";
+          ctx.font = "80px Arial";
+          ctx.fillText((nt["/fuel"] * 1000).toFixed(0), WIDTH_50 - 160, HEIGHT_50 - 110);
+          ctx.fillStyle = theme.foreground_supress;
+          ctx.font = "32px Arial";
+          ctx.fillText("WH", WIDTH_50 - 100, HEIGHT_50 - 110);
+
+          ctx.fillStyle = theme.throttle_bar;
+          ctx.fillRect(WIDTH_50 - 10, HEIGHT_50, -70, -200 * (nt["/fuel"] / nt["/fuel_capacity"]));
+          ctx.strokeStyle = theme.foreground;
+          ctx.strokeRect(WIDTH_50 - 10, HEIGHT_50, -70, -200);
+          
+          // speed info
+          ctx.fillStyle = theme.foreground;
+          ctx.textAlign = "right";
+          ctx.font = "180px Arial";
+          ctx.fillText(nt["/wheelspeed"].toFixed(0), WIDTH - 40, HEIGHT_50 - 10);
+          ctx.fillStyle = theme.foreground_supress;
+          ctx.font = "32px Arial";
+          ctx.fillText("KM/H", WIDTH - 40, HEIGHT_50 - 170);
+          
+          // hr
+          ctx.strokeStyle = theme.foreground;
+          ctx.beginPath();
+          ctx.moveTo(430, top_bar_height);
+          ctx.lineTo(430, HEIGHT_50 + 20);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, HEIGHT_50 + 20);
+          ctx.lineTo(WIDTH, HEIGHT_50 + 20);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(180, HEIGHT_50 + 20);
+          ctx.lineTo(180, HEIGHT);
+          ctx.stroke();
+          
+          // gear info
+          switch (nt["/gear"]) {
+            case "D":
+              ctx.fillStyle = theme.throttle_bar; break;
+            case "N":
+              ctx.fillStyle = theme.foreground; break;
+            case "R":
+              ctx.fillStyle = theme.brake_bar; break;
+          }
+          ctx.textAlign = "left";
+          ctx.font = "80px Arial";
+          ctx.fillText(nt["/gear"], 30, HEIGHT - 120);
+          
+          // time info
+          ctx.fillStyle = theme.foreground;
+          ctx.textAlign = "right";
+          ctx.font = "160px Arial";
+          ctx.fillText(formatTime(nt["/racetime"] ? nt["/racetime"] : (nt["/time"] - t_start)), WIDTH - 40, HEIGHT - 40);
+          break;
+      }
+    }
+
+    window.onload = refresh;
+  </script>
+  
+  <script>
+    // http://www.websocket.org/echo.html
+  
+    var ws = new WebSocket("ws://10.20.22.1:6202/ws");
+    var ws_connected = false;
+  
+    ws.onopen = function (e) {
+      console.log("Connected to websocket.");
+      ws_connected = true;
+    };
+  
+    ws.onclose = function (e) {
+      console.log("websocket Disconnected.");
+    };
+  
+    ws.onmessage = function (e) {
+      console.log("<span>RESPONSE: " + e.data + "</span>");
+      
+      let data = JSON.parse(e.data);
+      if (data.method.toUpperCase() == "RES") {
+        nt = data.data;
+  
+        refresh();
+       
+      }
+    };
+  
+    ws.onerror = function (e) {
+      console.log("<span class=error>ERROR:</span> " + e.data);
+    };
+  
+    var log = function(msg) {
+      log_content.insertAdjacentHTML("beforeend", "<p>" + msg + "</p>");
+    }
+  
+    var update = function() {
+      if (!ws_connected) {
+        return;
+      }
+  
+      ws.send("{\"method\": \"ALL\", \"data\": []}\n");
+    }
+  
+    setInterval(update, 50);
+    
+  </script>
+</body>
+</html>
